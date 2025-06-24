@@ -41,7 +41,7 @@ body {
   font-style: italic;
   z-index: 3;
   opacity: 0;
-  transition: opacity 1.5s ease-in-out;
+  transition: opacity 1.25s ease-in-out;
   pointer-events: none;
 }
 
