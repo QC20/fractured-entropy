@@ -38,18 +38,19 @@ The equations are integrated over time using numerical methods like Runge-Kutta,
 
 What makes these systems "strange" is their sensitive dependence on initial conditions. Two points starting infinitesimally close together will eventually diverge exponentially, yet both remain bounded within the attractor's structure. This creates the fractal-like detail that makes each attractor visually compelling at multiple scales.
 
+
 <table>
   <tr>
     <td align="center">
-      <img src="./src/assets/img/clifford-attractor.png" alt="Clifford Attractor" width="250"/><br/>
+      <img src="./src/assets/img/clifford-attractor.png" alt="Clifford Attractor" width="200"/><br/>
       <em>Clifford Attractor</em>
     </td>
     <td align="center">
-      <img src="./src/assets/img/de_jong_attractor.png" alt="De Jong Attractor" width="250"/><br/>
+      <img src="./src/assets/img/de_jong_attractor.png" alt="De Jong Attractor" width="200"/><br/>
       <em>De Jong Attractor</em>
     </td>
     <td align="center">
-      <img src="./src/assets/img/lorenz_attractor.png" alt="Lorenz Attractor" width="250"/><br/>
+      <img src="./src/assets/img/lorenz_attractor.png" alt="Lorenz Attractor" width="200"/><br/>
       <em>Lorenz Attractor</em>
     </td>
   </tr>
