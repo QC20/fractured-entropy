@@ -16,45 +16,89 @@ document.addEventListener('DOMContentLoaded', () => {
     let p5Instance = null;
     let currentScriptElement = null;
 
-    function loadAttractor(index) {
-        // Clean up the previous instance completely
+    function cleanupPrevious() {
+        // Remove p5 instance
         if (p5Instance) {
-            p5Instance.remove(); // This removes the canvas and stops the draw loop.
+            try {
+                p5Instance.remove();
+            } catch (e) {
+                console.log('Error removing p5 instance:', e);
+            }
             p5Instance = null;
         }
-        if (currentScriptElement) {
-            document.body.removeChild(currentScriptElement);
+
+        // Remove script element
+        if (currentScriptElement && currentScriptElement.parentNode) {
+            currentScriptElement.parentNode.removeChild(currentScriptElement);
             currentScriptElement = null;
         }
-        // Ensure the container is empty as a fallback
+
+        // Clear container
         canvasContainer.innerHTML = '';
 
-        // Set up for the new attractor
-        currentAttractorIndex = index;
-        const attractor = attractors[currentAttractorIndex];
+        // Clear global p5 functions to prevent conflicts
+        if (typeof window.setup !== 'undefined') {
+            delete window.setup;
+        }
+        if (typeof window.draw !== 'undefined') {
+            delete window.draw;
+        }
+        if (typeof window.mousePressed !== 'undefined') {
+            delete window.mousePressed;
+        }
+        if (typeof window.mouseReleased !== 'undefined') {
+            delete window.mouseReleased;
+        }
+        if (typeof window.mouseDragged !== 'undefined') {
+            delete window.mouseDragged;
+        }
+        if (typeof window.mouseWheel !== 'undefined') {
+            delete window.mouseWheel;
+        }
+        if (typeof window.windowResized !== 'undefined') {
+            delete window.windowResized;
+        }
+    }
 
-        // Display the attractor name and set it to fade out
-        attractorNameElement.textContent = attractor.name;
-        attractorNameElement.style.opacity = '1';
+    function loadAttractor(index) {
+        cleanupPrevious();
+
+        // Wait a moment for cleanup to complete
         setTimeout(() => {
-            attractorNameElement.style.opacity = '0';
-        }, 5000);
+            currentAttractorIndex = index;
+            const attractor = attractors[currentAttractorIndex];
 
-        // Load the new attractor script
-        const script = document.createElement('script');
-        script.src = attractor.path;
-        script.onload = () => {
-            // Once loaded, we must manually create a new p5 instance.
-            // Passing 'null' as the first argument tells p5 to look for global setup/draw functions.
-            // The second argument tells p5 where to put the canvas.
-            if (typeof setup === 'function') {
-                p5Instance = new p5(null, canvasContainer);
-            } else {
-                console.error("The 'setup' function was not found in the loaded script: " + attractor.path);
-            }
-        };
-        document.body.appendChild(script);
-        currentScriptElement = script;
+            // Display the attractor name with fade effect
+            attractorNameElement.textContent = attractor.name;
+            attractorNameElement.style.opacity = '1';
+            setTimeout(() => {
+                attractorNameElement.style.opacity = '0';
+            }, 3000);
+
+            // Load the new attractor script
+            const script = document.createElement('script');
+            script.src = attractor.path;
+            script.onload = () => {
+                // Give the script time to define its functions
+                setTimeout(() => {
+                    if (typeof window.setup === 'function') {
+                        try {
+                            p5Instance = new p5(null, canvasContainer);
+                        } catch (e) {
+                            console.error('Error creating p5 instance for', attractor.name, ':', e);
+                        }
+                    } else {
+                        console.error("Setup function not found for", attractor.name);
+                    }
+                }, 100);
+            };
+            script.onerror = () => {
+                console.error('Error loading script:', attractor.path);
+            };
+            
+            document.body.appendChild(script);
+            currentScriptElement = script;
+        }, 200);
     }
 
     button.addEventListener('click', () => {
@@ -62,6 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadAttractor(nextIndex);
     });
 
-    // Load the first attractor when the page is ready
+    // Load the first attractor
     loadAttractor(0);
 });
