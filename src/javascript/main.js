@@ -14,17 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'Thomas Attractor', path: './src/javascript/thomas_attractor.js' },
         { name: 'Runge-Kutta 4th Order Integration', path: './src/javascript/Runge-Kutta_4th_order_integration.js' },
         { name: 'Rössler Attractor', path: './src/javascript/rossler_attractor.js' },
-        { name: 'Nose-Hoover Attractor', path: './src/javascript/nose_hoover_attractor.js' },
-        
-
-        // 2D attractors omitted for now to focus on fully 3D systems
-        //{ name: 'Tinkerbell Attractor', path: './src/javascript/tinkerbell_attractor.js' },
-        //{ name: 'Hénon Attractor', path: './src/javascript/henon_attractor.js' },
-        //{ name: 'Lozi Attractor', path: './src/javascript/lozi_attractor.js' },
-        //{ name: 'Zaslavskii Attractor', path: './src/javascript/zaslavskii_attractor.js' },
-        //{ name: 'Hopalong Attractor', path: './src/javascript/hopalong_attractor.js' },
+        { name: 'Nose-Hoover Attractor', path: './src/javascript/nose_hoover_attractor.js' }
     ];
-});
 
     let currentAttractorIndex = 0;
     const button = document.querySelector('.learn-more');
