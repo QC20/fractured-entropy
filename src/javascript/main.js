@@ -6,9 +6,21 @@ document.addEventListener('DOMContentLoaded', () => {
         { name: 'De Jong Attractor', path: './src/javascript/dejong_attractor.js' },
         { name: 'Dequan Li Attractor', path: './src/javascript/dequan_li_attractor.js' },
         { name: 'Euler Adaptive Attractor', path: './src/javascript/euler_adaptive_attractor.js' },
-        { name: 'Halvorsen Attractor', path: './src/javascript/halvorsen_attractor.js' }
+        { name: 'Halvorsen Attractor', path: './src/javascript/halvorsen_attractor.js' },
+        { name: 'Tinkerbell Attractor', path: './src/javascript/tinkerbell_attractor.js' },
+        { name: 'Hénon Attractor', path: './src/javascript/henon_attractor.js' },
+        { name: 'Ikeda Attractor', path: './src/javascript/ikeda_attractor.js' },
+        { name: 'Lozi Attractor', path: './src/javascript/lozi_attractor.js' },
+        { name: 'Zaslavskii Attractor', path: './src/javascript/zaslavskii_attractor.js' },
+        { name: 'Clifford Attractor', path: './src/javascript/clifford_attractor.js' },
+        { name: 'Pickover Attractor', path: './src/javascript/pickover_attractor.js' },
+        { name: 'Lorenz Attractor', path: './src/javascript/lorenz_attractor.js' },
+        { name: 'Rabinovich Fabrikant Attractor', path: './src/javascript/rabinovich_fabrikant.js' },
+        { name: 'Thomas Attractor', path: './src/javascript/thomas_attractor.js' },
+        { name: 'Runge-Kutta 4th Order Integration', path: './src/javascript/Runge-Kutta_4th_order_integration.js' },
+        { name: 'Rössler Attractor', path: './src/javascript/rossler_attractor.js' },
     ];
-
+    
     let currentAttractorIndex = 0;
     const button = document.querySelector('.learn-more');
     const attractorNameElement = document.getElementById('attractor-name');
