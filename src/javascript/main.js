@@ -1,31 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Define attractors with their corresponding global function names
     const attractors = [
-        { name: 'Aizawa Attractor', path: './src/javascript/aizawa_attractor.js' },
-        { name: 'Chen Attractor', path: './src/javascript/chen_attractor.js' },
-        { name: 'Chua Attractor', path: './src/javascript/chua_attractor.js' },
-        { name: 'De Jong Attractor', path: './src/javascript/dejong_attractor.js' },
-        { name: 'Dequan Li Attractor', path: './src/javascript/dequan_li_attractor.js' },
-        { name: 'Euler Adaptive Attractor', path: './src/javascript/euler_adaptive_attractor.js' },
-        { name: 'Halvorsen Attractor', path: './src/javascript/halvorsen_attractor.js' },
-        { name: 'Ikeda Attractor', path: './src/javascript/ikeda_attractor.js' },
-        { name: 'Clifford Attractor', path: './src/javascript/clifford_attractor.js' },
-        { name: 'Pickover Attractor', path: './src/javascript/pickover_attractor.js' },
-        { name: 'Lorenz Attractor', path: './src/javascript/lorenz_attractor.js' },
-        { name: 'Thomas Attractor', path: './src/javascript/thomas_attractor.js' },
-        { name: 'Runge-Kutta 4th Order Integration', path: './src/javascript/Runge-Kutta_4th_order_integration.js' },
-        { name: 'Rössler Attractor', path: './src/javascript/rossler_attractor.js' },
-        { name: 'Nose-Hoover Attractor', path: './src/javascript/nose_hoover_attractor.js' }
+        { name: 'Aizawa Attractor', setupFunc: 'aizawaSetup', drawFunc: 'aizawaDraw' },
+        { name: 'Chen Attractor', setupFunc: 'chenSetup', drawFunc: 'chenDraw' },
+        { name: 'Chua Attractor', setupFunc: 'chuaSetup', drawFunc: 'chuaDraw' },
+        { name: 'De Jong Attractor', setupFunc: 'dejongSetup', drawFunc: 'dejongDraw' },
+        { name: 'Dequan Li Attractor', setupFunc: 'dequanLiSetup', drawFunc: 'dequanLiDraw' },
+        { name: 'Euler Adaptive Attractor', setupFunc: 'eulerAdaptiveSetup', drawFunc: 'eulerAdaptiveDraw' },
+        { name: 'Halvorsen Attractor', setupFunc: 'halvorsenSetup', drawFunc: 'halvorsenDraw' },
+        { name: 'Ikeda Attractor', setupFunc: 'ikedaSetup', drawFunc: 'ikedaDraw' },
+        { name: 'Clifford Attractor', setupFunc: 'cliffordSetup', drawFunc: 'cliffordDraw' },
+        { name: 'Pickover Attractor', setupFunc: 'pickoverSetup', drawFunc: 'pickoverDraw' },
+        { name: 'Lorenz Attractor', setupFunc: 'lorenzSetup', drawFunc: 'lorenzDraw' },
+        { name: 'Thomas Attractor', setupFunc: 'thomasSetup', drawFunc: 'thomasDraw' },
+        { name: 'Runge-Kutta 4th Order', setupFunc: 'rungeKuttaSetup', drawFunc: 'rungeKuttaDraw' },
+        { name: 'Rössler Attractor', setupFunc: 'rosslerSetup', drawFunc: 'rosslerDraw' },
+        { name: 'Nose-Hoover Attractor', setupFunc: 'noseHooverSetup', drawFunc: 'noseHooverDraw' }
     ];
 
     let currentAttractorIndex = 0;
+    let p5Instance = null;
     const button = document.querySelector('.learn-more');
     const attractorNameElement = document.getElementById('attractor-name');
     const canvasContainer = document.getElementById('canvas-container');
-    let p5Instance = null;
-    let currentScriptElement = null;
 
     function cleanupPrevious() {
-        // Remove p5 instance
         if (p5Instance) {
             try {
                 p5Instance.remove();
@@ -34,44 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             p5Instance = null;
         }
-
-        // Remove script element
-        if (currentScriptElement && currentScriptElement.parentNode) {
-            currentScriptElement.parentNode.removeChild(currentScriptElement);
-            currentScriptElement = null;
-        }
-
-        // Clear container
         canvasContainer.innerHTML = '';
-
-        // Clear global p5 functions to prevent conflicts
-        if (typeof window.setup !== 'undefined') {
-            delete window.setup;
-        }
-        if (typeof window.draw !== 'undefined') {
-            delete window.draw;
-        }
-        if (typeof window.mousePressed !== 'undefined') {
-            delete window.mousePressed;
-        }
-        if (typeof window.mouseReleased !== 'undefined') {
-            delete window.mouseReleased;
-        }
-        if (typeof window.mouseDragged !== 'undefined') {
-            delete window.mouseDragged;
-        }
-        if (typeof window.mouseWheel !== 'undefined') {
-            delete window.mouseWheel;
-        }
-        if (typeof window.windowResized !== 'undefined') {
-            delete window.windowResized;
-        }
     }
 
     function loadAttractor(index) {
         cleanupPrevious();
-
-        // Wait a moment for cleanup to complete
+        
         setTimeout(() => {
             currentAttractorIndex = index;
             const attractor = attractors[currentAttractorIndex];
@@ -83,29 +50,67 @@ document.addEventListener('DOMContentLoaded', () => {
                 attractorNameElement.style.opacity = '0';
             }, 5000);
 
-            // Load the new attractor script
-            const script = document.createElement('script');
-            script.src = attractor.path;
-            script.onload = () => {
-                // Give the script time to define its functions
-                setTimeout(() => {
-                    if (typeof window.setup === 'function') {
-                        try {
-                            p5Instance = new p5(null, canvasContainer);
-                        } catch (e) {
-                            console.error('Error creating p5 instance for', attractor.name, ':', e);
-                        }
-                    } else {
-                        console.error("Setup function not found for", attractor.name);
+            // Check if the attractor functions exist
+            const setupFunc = window[attractor.setupFunc];
+            const drawFunc = window[attractor.drawFunc];
+
+            if (typeof setupFunc === 'function' && typeof drawFunc === 'function') {
+                // Create a sketch function that uses the specific attractor's functions
+                const sketch = (p) => {
+                    p.setup = function() {
+                        setupFunc.call(p);
+                    };
+                    
+                    p.draw = function() {
+                        drawFunc.call(p);
+                    };
+
+                    // Add common interaction handlers if they exist globally
+                    if (typeof window.mousePressed === 'function') {
+                        p.mousePressed = function() {
+                            if (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height) {
+                                window.mousePressed.call(p);
+                            }
+                        };
                     }
-                }, 100);
-            };
-            script.onerror = () => {
-                console.error('Error loading script:', attractor.path);
-            };
-            
-            document.body.appendChild(script);
-            currentScriptElement = script;
+
+                    if (typeof window.mouseReleased === 'function') {
+                        p.mouseReleased = function() {
+                            window.mouseReleased.call(p);
+                        };
+                    }
+
+                    if (typeof window.mouseDragged === 'function') {
+                        p.mouseDragged = function() {
+                            if (p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height) {
+                                window.mouseDragged.call(p);
+                            }
+                        };
+                    }
+
+                    if (typeof window.mouseWheel === 'function') {
+                        p.mouseWheel = function(event) {
+                            window.mouseWheel.call(p, event);
+                        };
+                    }
+
+                    if (typeof window.windowResized === 'function') {
+                        p.windowResized = function() {
+                            window.windowResized.call(p);
+                        };
+                    }
+                };
+
+                try {
+                    p5Instance = new p5(sketch, canvasContainer);
+                } catch (e) {
+                    console.error('Error creating p5 instance for', attractor.name, ':', e);
+                }
+            } else {
+                console.error('Setup or draw function not found for', attractor.name);
+                console.log('Looking for:', attractor.setupFunc, 'and', attractor.drawFunc);
+                console.log('Available functions:', Object.keys(window).filter(key => key.includes('etup') || key.includes('raw')));
+            }
         }, 200);
     }
 
