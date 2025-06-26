@@ -19,7 +19,10 @@
       </button>
     </div>
 
-    <!-- Use main.js for dynamic loading - remove all static script includes -->
+    <!-- Load Runge-Kutta integration script first as it might be used by other attractors -->
+    <script src="./src/javascript/Runge-Kutta_4th_order_integration.js"></script>
+    
+    <!-- Use main.js for dynamic loading -->
     <script src="./src/javascript/main.js"></script>
 </body>
 </html>

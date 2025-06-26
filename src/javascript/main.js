@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const attractorNameElement = document.getElementById('attractor-name');
     const canvasContainer = document.getElementById('canvas-container');
     let p5Instance = null;
-    let currentScriptElement = null;
+    let loadedScripts = new Set(); // Track loaded scripts to avoid duplicates
 
     function cleanupPrevious() {
         // Remove p5 instance
@@ -35,85 +35,183 @@ document.addEventListener('DOMContentLoaded', () => {
             p5Instance = null;
         }
 
-        // Remove script element
-        if (currentScriptElement && currentScriptElement.parentNode) {
-            currentScriptElement.parentNode.removeChild(currentScriptElement);
-            currentScriptElement = null;
-        }
-
         // Clear container
         canvasContainer.innerHTML = '';
 
         // Clear global p5 functions to prevent conflicts
-        if (typeof window.setup !== 'undefined') {
-            delete window.setup;
-        }
-        if (typeof window.draw !== 'undefined') {
-            delete window.draw;
-        }
-        if (typeof window.mousePressed !== 'undefined') {
-            delete window.mousePressed;
-        }
-        if (typeof window.mouseReleased !== 'undefined') {
-            delete window.mouseReleased;
-        }
-        if (typeof window.mouseDragged !== 'undefined') {
-            delete window.mouseDragged;
-        }
-        if (typeof window.mouseWheel !== 'undefined') {
-            delete window.mouseWheel;
-        }
-        if (typeof window.windowResized !== 'undefined') {
-            delete window.windowResized;
-        }
+        const p5Functions = ['setup', 'draw', 'mousePressed', 'mouseReleased', 'mouseDragged', 'mouseWheel', 'windowResized', 'keyPressed', 'keyReleased'];
+        p5Functions.forEach(func => {
+            if (typeof window[func] !== 'undefined') {
+                delete window[func];
+            }
+        });
+
+        // Also clear any variables that might be defined by attractors
+        const commonVars = ['x', 'y', 'z', 'dt', 'points', 'particles', 'angle', 'scale', 'camera'];
+        commonVars.forEach(varName => {
+            if (typeof window[varName] !== 'undefined' && window[varName] !== document && window[varName] !== window) {
+                try {
+                    delete window[varName];
+                } catch (e) {
+                    // Some variables can't be deleted, that's ok
+                }
+            }
+        });
     }
 
-    function loadAttractor(index) {
-        cleanupPrevious();
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            // If script is already loaded, remove it first
+            const existingScript = document.querySelector(`script[src="${src}"]`);
+            if (existingScript) {
+                existingScript.remove();
+            }
 
-        // Wait a moment for cleanup to complete
-        setTimeout(() => {
-            currentAttractorIndex = index;
-            const attractor = attractors[currentAttractorIndex];
-
-            // Display the attractor name with fade effect
-            attractorNameElement.textContent = attractor.name;
-            attractorNameElement.style.opacity = '1';
-            setTimeout(() => {
-                attractorNameElement.style.opacity = '0';
-            }, 5000);
-
-            // Load the new attractor script
             const script = document.createElement('script');
-            script.src = attractor.path;
+            script.src = src;
+            script.async = false; // Ensure synchronous loading
+            
             script.onload = () => {
-                // Give the script time to define its functions
-                setTimeout(() => {
-                    if (typeof window.setup === 'function') {
-                        try {
-                            p5Instance = new p5(null, canvasContainer);
-                        } catch (e) {
-                            console.error('Error creating p5 instance for', attractor.name, ':', e);
-                        }
-                    } else {
-                        console.error("Setup function not found for", attractor.name);
-                    }
-                }, 100);
-            };
-            script.onerror = () => {
-                console.error('Error loading script:', attractor.path);
+                loadedScripts.add(src);
+                resolve();
             };
             
-            document.body.appendChild(script);
-            currentScriptElement = script;
-        }, 200);
+            script.onerror = () => {
+                console.error('Error loading script:', src);
+                reject(new Error(`Failed to load ${src}`));
+            };
+            
+            document.head.appendChild(script);
+        });
     }
 
+    function showAttractorName(name) {
+        attractorNameElement.textContent = name;
+        attractorNameElement.style.opacity = '1';
+        setTimeout(() => {
+            attractorNameElement.style.opacity = '0';
+        }, 5000);
+    }
+
+    async function loadAttractor(index) {
+        cleanupPrevious();
+
+        // Add a small delay to ensure cleanup is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        currentAttractorIndex = index;
+        const attractor = attractors[currentAttractorIndex];
+
+        // Show attractor name
+        showAttractorName(attractor.name);
+
+        try {
+            // Load the attractor script
+            await loadScript(attractor.path);
+            
+            // Give the script time to define its functions
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            // Check if setup function exists and create p5 instance
+            if (typeof window.setup === 'function') {
+                console.log(`Creating p5 instance for ${attractor.name}`);
+                
+                // Create p5 instance in instance mode to avoid conflicts
+                const sketch = (p) => {
+                    // Capture the current setup and draw functions
+                    const currentSetup = window.setup;
+                    const currentDraw = window.draw;
+                    const currentMousePressed = window.mousePressed;
+                    const currentMouseReleased = window.mouseReleased;
+                    const currentMouseDragged = window.mouseDragged;
+                    const currentMouseWheel = window.mouseWheel;
+                    const currentWindowResized = window.windowResized;
+                    
+                    p.setup = function() {
+                        // Call the attractor's setup function in the context of this p5 instance
+                        if (currentSetup) {
+                            currentSetup.call(this);
+                        }
+                    };
+                    
+                    p.draw = function() {
+                        // Call the attractor's draw function in the context of this p5 instance
+                        if (currentDraw) {
+                            currentDraw.call(this);
+                        }
+                    };
+
+                    // Add interaction handlers if they exist
+                    if (currentMousePressed) {
+                        p.mousePressed = function() {
+                            if (this.mouseX >= 0 && this.mouseX <= this.width && this.mouseY >= 0 && this.mouseY <= this.height) {
+                                currentMousePressed.call(this);
+                            }
+                        };
+                    }
+
+                    if (currentMouseReleased) {
+                        p.mouseReleased = function() {
+                            currentMouseReleased.call(this);
+                        };
+                    }
+
+                    if (currentMouseDragged) {
+                        p.mouseDragged = function() {
+                            if (this.mouseX >= 0 && this.mouseX <= this.width && this.mouseY >= 0 && this.mouseY <= this.height) {
+                                currentMouseDragged.call(this);
+                            }
+                        };
+                    }
+
+                    if (currentMouseWheel) {
+                        p.mouseWheel = function(event) {
+                            currentMouseWheel.call(this, event);
+                            return false; // Prevent page scrolling
+                        };
+                    }
+
+                    if (currentWindowResized) {
+                        p.windowResized = function() {
+                            currentWindowResized.call(this);
+                        };
+                    }
+                };
+
+                p5Instance = new p5(sketch, canvasContainer);
+                console.log(`Successfully loaded ${attractor.name}`);
+                
+            } else {
+                console.error(`Setup function not found for ${attractor.name}`);
+                console.log('Available window functions:', Object.keys(window).filter(key => typeof window[key] === 'function' && (key.includes('setup') || key.includes('draw'))));
+            }
+        } catch (error) {
+            console.error(`Error loading ${attractor.name}:`, error);
+            
+            // Try to load the next attractor if this one fails
+            setTimeout(() => {
+                const nextIndex = (currentAttractorIndex + 1) % attractors.length;
+                if (nextIndex !== index) { // Avoid infinite loop
+                    loadAttractor(nextIndex);
+                }
+            }, 1000);
+        }
+    }
+
+    // Button click handler
     button.addEventListener('click', () => {
+        button.disabled = true; // Prevent rapid clicking
         const nextIndex = (currentAttractorIndex + 1) % attractors.length;
-        loadAttractor(nextIndex);
+        
+        loadAttractor(nextIndex).finally(() => {
+            // Re-enable button after loading completes
+            setTimeout(() => {
+                button.disabled = false;
+            }, 500);
+        });
     });
 
     // Load the first attractor
+    console.log('Starting with first attractor...');
     loadAttractor(0);
 });
